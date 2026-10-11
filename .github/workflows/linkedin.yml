@@ -1,15 +1,28 @@
 name: LinkedIn posts
 
+# Route A (recommended): run "buffer-schedule" once by hand; Buffer then publishes every post
+# in linkedin/posts.json to the KUØ WORKS Page and Jay's profile at its time.
+# Route B: with a LINKEDIN_ACCESS_TOKEN secret, the daily run posts due items to Jay's profile.
+
 on:
   schedule:
-    - cron: "5 13 * * *" # 13:05 UTC = 21:05 Taiwan; posts whatever is due in linkedin/posts.json
+    - cron: "5 13 * * *" # 13:05 UTC = 21:05 Taiwan (route B only; does nothing without the token)
   workflow_dispatch:
     inputs:
+      task:
+        description: "What to run"
+        type: choice
+        options:
+          - buffer-schedule
+          - buffer-channels
+          - linkedin-due
+          - linkedin-post
+        default: buffer-schedule
       post_id:
-        description: "Post one id now (e.g. li-01). Leave empty to post whatever is due."
+        description: "For linkedin-post: the post id, e.g. li-01"
         required: false
       dry_run:
-        description: "Only show what would be posted"
+        description: "Only show what would happen"
         type: boolean
         default: false
 
@@ -26,23 +39,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Publish
+      - name: Run
         env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_CHANNEL_IDS: ${{ vars.BUFFER_CHANNEL_IDS }}
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_AUTHOR: ${{ vars.LINKEDIN_AUTHOR }}
           LINKEDIN_VERSION: ${{ vars.LINKEDIN_VERSION }}
+          TASK: ${{ inputs.task || 'linkedin-due' }}
           POST_ID: ${{ inputs.post_id }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
-          if [ -n "$POST_ID" ] && [ "$DRY_RUN" = "true" ]; then
-            python3 linkedin/publish.py preview "$POST_ID"
-          elif [ -n "$POST_ID" ]; then
-            python3 linkedin/publish.py post "$POST_ID"
-          elif [ "$DRY_RUN" = "true" ]; then
-            python3 linkedin/publish.py due --dry-run
-          else
-            python3 linkedin/publish.py due
-          fi
+          dry=""; [ "$DRY_RUN" = "true" ] && dry="--dry-run"
+          case "$TASK" in
+            buffer-schedule) python3 linkedin/publish.py buffer-schedule $dry ;;
+            buffer-channels) python3 linkedin/publish.py buffer-channels ;;
+            linkedin-due)    python3 linkedin/publish.py due $dry ;;
+            linkedin-post)
+              if [ "$DRY_RUN" = "true" ]; then python3 linkedin/publish.py preview "$POST_ID";
+              else python3 linkedin/publish.py post "$POST_ID"; fi ;;
+          esac
 
       - name: Record what was posted
         if: always()

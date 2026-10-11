@@ -3,16 +3,24 @@
 
 Uses only the Python standard library, so it runs as-is on GitHub Actions.
 
+Route A, through Buffer (posts to the Company Page and the personal profile):
+  python3 linkedin/publish.py buffer-channels             list the connected Buffer channels and their ids
+  python3 linkedin/publish.py buffer-schedule [--dry-run] queue every future post in Buffer at its time
+
+Route B, straight to the LinkedIn API (personal profile only):
   python3 linkedin/publish.py whoami            check the token, print the author URN
-  python3 linkedin/publish.py preview li-01     print a post exactly as it will be sent
+  python3 linkedin/publish.py preview li-01     print a post exactly as LinkedIn will receive it
   python3 linkedin/publish.py post li-01        publish one post now
   python3 linkedin/publish.py due [--dry-run]   publish every post that is due and not yet posted
 
 Environment:
-  LINKEDIN_ACCESS_TOKEN  required; 60-day member token with w_member_social (+ openid, profile)
-  LINKEDIN_AUTHOR        optional; e.g. urn:li:organization:123 once Page posting is approved
-  LINKEDIN_VERSION       optional; LinkedIn-Version header (YYYYMM), defaults to two months back
-  GRACE_HOURS            optional; how late a post may still go out (default 12)
+  BUFFER_API_KEY         route A; personal key from publish.buffer.com/settings/api
+  BUFFER_CHANNEL_IDS     route A, optional; comma-separated ids, default every LinkedIn channel
+  MEDIA_BASE_URL         route A, optional; public base URL for images (default: this repo's main branch)
+  LINKEDIN_ACCESS_TOKEN  route B; 60-day member token with w_member_social (+ openid, profile)
+  LINKEDIN_AUTHOR        route B, optional; e.g. urn:li:organization:123 once Page posting is approved
+  LINKEDIN_VERSION       route B, optional; LinkedIn-Version header (YYYYMM), defaults to two months back
+  GRACE_HOURS            route B, optional; how late a post may still go out (default 12)
 """
 import argparse
 import datetime as dt
@@ -27,6 +35,8 @@ import urllib.parse
 import urllib.request
 
 API = os.environ.get("LINKEDIN_API_BASE", "https://api.linkedin.com")
+BUFFER_API = os.environ.get("BUFFER_API_BASE", "https://api.buffer.com")
+MEDIA_BASE = os.environ.get("MEDIA_BASE_URL", "https://raw.githubusercontent.com/jaykuo0619/kuoworks-media/main/")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PLAN = ROOT / "linkedin" / "posts.json"
 LOG = ROOT / "linkedin" / "posted.json"
@@ -169,8 +179,8 @@ def cmd_due(dry_run):
     log, t = load_log(), now()
     due, missed = [], []
     for p in load_plan():
-        if p["id"] in log:
-            continue
+        if p["id"] in log or any(k.startswith(p["id"] + "@buffer:") for k in log):
+            continue  # already posted, or already queued in Buffer
         at = dt.datetime.fromisoformat(p["publish_at_utc"].replace("Z", "+00:00"))
         if at <= t < at + grace:
             due.append(p)
@@ -190,17 +200,99 @@ def cmd_due(dry_run):
         publish(p, log, owner)
 
 
+# ---------------------------------------------------------------- Buffer (route A)
+
+def buffer_gql(query, variables=None):
+    key = os.environ.get("BUFFER_API_KEY", "").strip()
+    if not key:
+        raise LinkedInError("BUFFER_API_KEY is not set")
+    req = urllib.request.Request(
+        BUFFER_API, method="POST",
+        data=json.dumps({"query": query, "variables": variables or {}}).encode(),
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json",
+                 "User-Agent": "kuoworks-media-linkedin/1.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            out = json.loads(r.read().decode())
+    except urllib.error.HTTPError as e:
+        raise LinkedInError(f"Buffer API -> HTTP {e.code}\n{e.read().decode(errors='replace')[:800]}") from None
+    if out.get("errors"):
+        raise LinkedInError("Buffer API error: " + json.dumps(out["errors"], ensure_ascii=False)[:800])
+    return out["data"]
+
+
+def buffer_channels():
+    data = buffer_gql("query { account { organizations { id name } } }")
+    channels = []
+    for org in data["account"]["organizations"]:
+        q = "query { channels(input: {organizationId: %s}) { id name displayName service } }" % json.dumps(org["id"])
+        for c in buffer_gql(q)["channels"]:
+            channels.append(c)
+    return channels
+
+
+def buffer_targets():
+    if os.environ.get("BUFFER_CHANNEL_IDS"):
+        return [c.strip() for c in os.environ["BUFFER_CHANNEL_IDS"].split(",") if c.strip()]
+    ids = [c["id"] for c in buffer_channels() if "linkedin" in (c.get("service") or "").lower()]
+    if not ids:
+        raise LinkedInError("no LinkedIn channel connected in Buffer (connect the Page and profile first)")
+    return ids
+
+
+CREATE_POST = """mutation($input: CreatePostInput!) {
+  createPost(input: $input) {
+    ... on PostActionSuccess { post { id dueAt } }
+    ... on MutationError { message }
+  }
+}"""
+
+
+def cmd_buffer_schedule(dry_run):
+    log, soon = load_log(), now() + dt.timedelta(minutes=15)
+    todo = [p for p in load_plan()
+            if dt.datetime.fromisoformat(p["publish_at_utc"].replace("Z", "+00:00")) > soon]
+    channels = buffer_targets() if not dry_run or os.environ.get("BUFFER_API_KEY") else ["<channel>"]
+    for p in todo:
+        for ch in channels:
+            key = f"{p['id']}@buffer:{ch}"
+            if key in log:
+                continue
+            due = p["publish_at_utc"].replace("Z", ".000Z")
+            if dry_run:
+                print(f"would queue {p['id']} on {ch} for {due}")
+                continue
+            post = {"text": p["text"], "channelId": ch, "schedulingType": "automatic",
+                    "mode": "customScheduled", "dueAt": due}
+            if p.get("image"):
+                post["assets"] = [{"image": {"url": MEDIA_BASE + p["image"]}}]
+            res = buffer_gql(CREATE_POST, {"input": post})["createPost"]
+            if "message" in res and "post" not in res:
+                raise LinkedInError(f"Buffer refused {p['id']} on {ch}: {res['message']}")
+            log[key] = {"queued_at": now().isoformat(timespec="seconds"), "buffer_post": res["post"]["id"], "due": due}
+            save_log(log)
+            print(f"queued {p['id']} on {ch} for {due}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("whoami")
+    sub.add_parser("buffer-channels")
+    b = sub.add_parser("buffer-schedule")
+    b.add_argument("--dry-run", action="store_true")
     for name in ("preview", "post"):
         sub.add_parser(name).add_argument("id")
     d = sub.add_parser("due")
     d.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
     try:
-        if a.cmd == "preview":
+        if a.cmd == "buffer-channels":
+            for c in buffer_channels():
+                print(f"{c['id']}  {c.get('service')}  {c.get('displayName') or c.get('name')}")
+        elif a.cmd == "buffer-schedule":
+            cmd_buffer_schedule(a.dry_run)
+        elif a.cmd == "preview":
             print(little_text(find(a.id)["text"]))
         elif a.cmd == "due" and a.dry_run:
             cmd_due(True)
