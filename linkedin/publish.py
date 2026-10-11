@@ -43,7 +43,7 @@ LOG = ROOT / "linkedin" / "posted.json"
 
 # Characters LinkedIn's "little text" format reserves in post commentary.
 RESERVED = re.compile(r"([\\|{}@\[\]()<>#*_~])")
-HASHTAG = re.compile(r"(?<![\w&])#(\w+)")
+HASHTAG = re.compile(r"(?<![\w&/])#([^\W\d_]\w*)")
 
 
 class LinkedInError(RuntimeError):
@@ -190,6 +190,8 @@ def cmd_due(dry_run):
         print("skipped (past the grace window, post by hand or move the date): " + ", ".join(missed))
     if not due:
         print("nothing due")
+        if missed:
+            sys.exit(2)
         return
     if dry_run:
         for p in due:
@@ -256,7 +258,7 @@ def cmd_buffer_schedule(dry_run):
     for p in todo:
         for ch in channels:
             key = f"{p['id']}@buffer:{ch}"
-            if key in log:
+            if key in log or p["id"] in log:
                 continue
             due = p["publish_at_utc"].replace("Z", ".000Z")
             if dry_run:
@@ -304,7 +306,7 @@ def main():
             print(author(), f"(LinkedIn-Version {api_version()})")
         elif a.cmd == "post":
             log = load_log()
-            if a.id in log:
+            if a.id in log or any(k.startswith(a.id + "@buffer:") for k in log):
                 raise LinkedInError(f"{a.id} was already posted: {log[a.id]}")
             publish(find(a.id), log, author())
     except LinkedInError as e:
