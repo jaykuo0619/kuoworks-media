@@ -1,0 +1,65 @@
+[
+  {
+    "id": "li-01",
+    "publish_at_utc": "2026-10-13T13:00:00Z",
+    "image": "linkedin/cards/li-01.jpg",
+    "alt": "KUØ WORKS logo. Software, built from zero.",
+    "text": "I started a software studio. It's called KUØ WORKS (杰構).\n\nThe Ø is a zero. Every project goes back to the starting point: who is using this, where are they actually stuck, and what is the least I can build to fix it?\n\n構 means structure. The parts of software nobody sees are the parts I care about most.\n\nIt's just me for now, building small iOS apps from Taiwan. I'll share what I build and what I learn here.\n\n—\n\n我在台灣開了一間軟體工作室，叫 KUØ WORKS 杰構。Ø 是零，每個作品都從使用的人重新想起；構是結構，看不見的地方最用心。目前一個人，做小而好用的 iOS App，會在這裡分享做了什麼、學到什麼。\n\nhttps://jaykuo0619.github.io/kuoworks/\n\n#buildinpublic #indiedev #iOSdev"
+  },
+  {
+    "id": "li-02",
+    "publish_at_utc": "2026-10-14T13:00:00Z",
+    "image": "linkedin/cards/li-02.jpg",
+    "alt": "The nearest restroom you can actually use. Color legend: free, ask the staff, customers only, paid.",
+    "text": "My first app finds restrooms. Yes, really.\n\nMap apps can find you a restroom. They can't tell you whether you need to buy something first, whether the staff will let you in, or whether it closed an hour ago.\n\nSo I built Nature Calls (廁略 in Taiwan). Open it and you see the nearest restroom you can actually use, color-coded by access: free, ask the staff, customers only, or paid.\n\nA boring problem, solved properly, is still worth building.\n\n—\n\n第一個作品是找廁所的 App「廁略」。地圖找得到廁所，卻不會告訴你要不要先消費、店員借不借、是不是已經關門。打開廁略，最近、而且現在能用的那一間直接告訴你，用顏色分：免費、向店員借、限消費者、需付費。\n\nhttps://apps.apple.com/us/app/nature-calls-restroom-finder/id6817375955\n\n#iOSdev #productdesign #indiedev"
+  },
+  {
+    "id": "li-03",
+    "publish_at_utc": "2026-10-15T13:00:00Z",
+    "image": "linkedin/cards/li-03.jpg",
+    "alt": "40,000+ restrooms on one map.",
+    "text": "Taiwan's Ministry of Environment publishes every registered public restroom as open data, including whether it has accessible stalls and baby-changing tables.\n\nMost people never see it. I combined it with OpenStreetMap so there are 40,000+ locations on one map.\n\nLesson: before building a dataset, check whether a government already built it for you.\n\n—\n\n環境部有一份「全國公廁建檔資料」，連無障礙廁所、尿布台都有標，但大部分人從沒看過。我把它和 OpenStreetMap 合在一起，一張地圖找完 40,000 多個地點。心得：自己建資料之前，先看看政府是不是已經做好了。\n\n#opendata #civictech #iOSdev"
+  },
+  {
+    "id": "li-04",
+    "publish_at_utc": "2026-10-20T13:00:00Z",
+    "image": "linkedin/cards/li-04.jpg",
+    "alt": "The hardest part isn't the code. It's deciding what not to build.",
+    "text": "The hardest part of building an app alone isn't writing code. It's deciding what not to build.\n\nFor Nature Calls I cut anything that didn't help one job: finding a usable restroom fast. Every feature I said no to made that job a little faster.\n\nWhat's a feature you wish an app you use every day would remove?\n\n—\n\n一個人開發 App，最難的不是寫程式，是決定「不做什麼」。廁略只留下幫你最快找到能用的廁所的功能，每拒絕一個功能，這件事就快一點。你最希望每天用的 App 拿掉哪個功能？\n\n#productmanagement #indiedev #buildinpublic"
+  },
+  {
+    "id": "li-05",
+    "publish_at_utc": "2026-10-21T13:00:00Z",
+    "image": "linkedin/cards/li-05.jpg",
+    "alt": "Is it still open? Open, closes 22:00. Closing soon, 30 min. Closed, opens 08:00.",
+    "text": "\"Is it still open?\" is the question maps get wrong most.\n\nNature Calls shows Open, Closing soon, or Closed · opens 08:00 tomorrow, and an \"Open now\" filter hides everything else. If anyone reports a restroom unusable in the last three days, it gets a red ✕.\n\nSmall details, but they're the difference between trusting an app and deleting it.\n\n—\n\n「那間還開著嗎？」是地圖最常答錯的問題。廁略會顯示營業中、即將打烊、已打烊 · 明天幾點開，打開「現在開放」就只留下能去的。三天內有人回報不能用，就會標上紅色 ✕。\n\n#UXdesign #iOSdev #indiedev"
+  },
+  {
+    "id": "li-06",
+    "publish_at_utc": "2026-10-22T13:00:00Z",
+    "image": "linkedin/cards/li-06.jpg",
+    "alt": "No ads in the core features.",
+    "text": "A rule I set for myself: no ads in the core features.\n\nNobody looking for a restroom should sit through a five-second ad. The app is free; Pro adds saved places and offline data for people who want more.\n\nIt makes the business harder. It also makes it an app I'd use myself.\n\n—\n\n給自己定的規矩：基本功能不放廣告。急著找廁所的人，不該先看五秒廣告。App 免費，想要更多再升級 Pro，可以收藏常去的地點、離線使用。\n\n#indiedev #productdesign #monetization"
+  },
+  {
+    "id": "li-07",
+    "publish_at_utc": "2026-10-27T13:00:00Z",
+    "image": "linkedin/cards/li-07.jpg",
+    "alt": "Together for 1,024 days. On your home screen, lock screen and Apple Watch.",
+    "text": "App #2 is for couples. It's called OurDays (小日子).\n\nIt puts the number of days you've been together on your home screen, lock screen and Apple Watch, with a few would-you-rather questions each day that reveal only when both of you answer.\n\n—\n\n第二個作品「小日子」是給兩個人用的 App。在一起的天數放在桌面、鎖定畫面和 Apple Watch 上，每天還有幾題二選一，兩個人都選了才揭曉。\n\nhttps://apps.apple.com/app/id6819721328\n\n#iOSdev #WidgetKit #indiedev"
+  },
+  {
+    "id": "li-08",
+    "publish_at_utc": "2026-10-28T13:00:00Z",
+    "image": "linkedin/cards/li-08.jpg",
+    "alt": "One phone. Everyone plays. Friends join the table from a web link.",
+    "text": "App #3 is waiting for App Store review: PartyTable (揪一桌).\n\nCard and party games on one phone: Big Two, Old Maid, Werewolf, Who's the Spy, Pictionary. The decision I'm proudest of: friends don't need to install anything. They join the same table from a web link.\n\nEvery install step you remove is a friend who actually plays.\n\n—\n\n第三個作品「揪一桌」正在等 App Store 審核。大老二、抽鬼牌、狼人殺、誰是臥底、你畫我猜，一支手機開桌。最得意的決定：朋友不用裝 App，點網頁連結就能加入同一桌。\n\n#buildinpublic #gamedev #iOSdev"
+  },
+  {
+    "id": "li-09",
+    "publish_at_utc": "2026-10-29T13:00:00Z",
+    "image": "linkedin/cards/li-09.jpg",
+    "alt": "What a one-person studio learns: shipping is half the work, small apps win trust faster, write down what you won't build.",
+    "text": "Three apps in, here's what I've learned as a one-person studio:\n\n1. Shipping is half the work. Getting anyone to notice is the other half.\n2. Small apps that do one thing win trust faster than big ones that do everything.\n3. Write down what you will not build, before you start.\n\nNext: bringing these apps to more people in the US. If you're building something small and independent too, I'd like to hear about it.\n\n—\n\n做了三個 App，一人工作室的三個心得：上架只是一半，讓人知道是另一半；只做一件事的小 App 比什麼都做的大 App 更快被信任；開工前先寫下「不做什麼」。\n\n#indiedev #startups #buildinpublic"
+  }
+]

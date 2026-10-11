@@ -1,0 +1,56 @@
+name: LinkedIn posts
+
+on:
+  schedule:
+    - cron: "5 13 * * *" # 13:05 UTC = 21:05 Taiwan; posts whatever is due in linkedin/posts.json
+  workflow_dispatch:
+    inputs:
+      post_id:
+        description: "Post one id now (e.g. li-01). Leave empty to post whatever is due."
+        required: false
+      dry_run:
+        description: "Only show what would be posted"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: linkedin-posts
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_AUTHOR: ${{ vars.LINKEDIN_AUTHOR }}
+          LINKEDIN_VERSION: ${{ vars.LINKEDIN_VERSION }}
+          POST_ID: ${{ inputs.post_id }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ -n "$POST_ID" ] && [ "$DRY_RUN" = "true" ]; then
+            python3 linkedin/publish.py preview "$POST_ID"
+          elif [ -n "$POST_ID" ]; then
+            python3 linkedin/publish.py post "$POST_ID"
+          elif [ "$DRY_RUN" = "true" ]; then
+            python3 linkedin/publish.py due --dry-run
+          else
+            python3 linkedin/publish.py due
+          fi
+
+      - name: Record what was posted
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain linkedin/posted.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add linkedin/posted.json
+            git commit -m "LinkedIn: record published posts"
+            git push
+          fi
