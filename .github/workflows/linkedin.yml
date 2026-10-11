@@ -1,0 +1,74 @@
+name: LinkedIn posts
+
+# Route A (recommended): run "buffer-schedule" once by hand; Buffer then publishes every post
+# in linkedin/posts.json to the KUØ WORKS Page and Jay's profile at its time.
+# Route B: with a LINKEDIN_ACCESS_TOKEN secret, the daily run posts due items to Jay's profile.
+
+on:
+  schedule:
+    - cron: "5 13 * * *" # 13:05 UTC = 21:05 Taiwan (route B only; does nothing without the token)
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "What to run"
+        type: choice
+        options:
+          - buffer-schedule
+          - buffer-channels
+          - linkedin-due
+          - linkedin-post
+        default: buffer-schedule
+      post_id:
+        description: "For linkedin-post: the post id, e.g. li-01"
+        required: false
+      dry_run:
+        description: "Only show what would happen"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: linkedin-posts
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Run
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          BUFFER_CHANNEL_IDS: ${{ vars.BUFFER_CHANNEL_IDS }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_AUTHOR: ${{ vars.LINKEDIN_AUTHOR }}
+          LINKEDIN_VERSION: ${{ vars.LINKEDIN_VERSION }}
+          TASK: ${{ inputs.task || 'linkedin-due' }}
+          POST_ID: ${{ inputs.post_id }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          dry=""; [ "$DRY_RUN" = "true" ] && dry="--dry-run"
+          case "$TASK" in
+            buffer-schedule) python3 linkedin/publish.py buffer-schedule $dry ;;
+            buffer-channels) python3 linkedin/publish.py buffer-channels ;;
+            linkedin-due)    python3 linkedin/publish.py due $dry ;;
+            linkedin-post)
+              if [ "$DRY_RUN" = "true" ]; then python3 linkedin/publish.py preview "$POST_ID";
+              else python3 linkedin/publish.py post "$POST_ID"; fi ;;
+          esac
+
+      - name: Record what was posted
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain linkedin/posted.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add linkedin/posted.json
+            git commit -m "LinkedIn: record published posts"
+            for i in 1 2 3; do git pull --rebase origin "$(git branch --show-current)" && git push && break; sleep 5; done
+          fi
