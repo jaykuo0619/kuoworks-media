@@ -6,6 +6,8 @@ Uses only the Python standard library, so it runs as-is on GitHub Actions.
 Route A, through Buffer (posts to the Company Page and the personal profile):
   python3 linkedin/publish.py buffer-channels             list the connected Buffer channels and their ids
   python3 linkedin/publish.py buffer-schedule [--dry-run] queue every future post in Buffer at its time
+  python3 linkedin/publish.py buffer-unschedule [--channel ID ...] [--dry-run]
+                                                          delete the still-queued posts (all channels, or only the given ones)
 
 Route B, straight to the LinkedIn API (personal profile only):
   python3 linkedin/publish.py whoami            check the token, print the author URN
@@ -276,6 +278,37 @@ def cmd_buffer_schedule(dry_run):
             print(f"queued {p['id']} on {ch} for {due}")
 
 
+DELETE_POST = """mutation($input: DeletePostInput!) {
+  deletePost(input: $input) {
+    ... on DeletePostSuccess { id }
+    ... on VoidMutationError { message }
+  }
+}"""
+
+
+def cmd_buffer_unschedule(channels, dry_run):
+    """Delete queued posts that have not gone out yet. Entries stay in posted.json, marked
+    deleted_at, so buffer-schedule does not queue them again; remove an entry to resume it."""
+    log, cutoff = load_log(), now() + dt.timedelta(minutes=5)
+    for key, rec in sorted(log.items(), key=lambda kv: kv[1].get("due", "")):
+        if "@buffer:" not in key or rec.get("deleted_at") or not rec.get("buffer_post"):
+            continue
+        if channels and key.split("@buffer:", 1)[1] not in channels:
+            continue
+        if dt.datetime.fromisoformat(rec["due"].replace("Z", "+00:00")) <= cutoff:
+            print(f"left alone {key}: due {rec['due']} (already published or about to be)")
+            continue
+        if dry_run:
+            print(f"would delete {key} ({rec['buffer_post']}) due {rec['due']}")
+            continue
+        res = buffer_gql(DELETE_POST, {"input": {"id": rec["buffer_post"]}})["deletePost"]
+        if "message" in res:
+            raise LinkedInError(f"Buffer would not delete {key}: {res['message']}")
+        rec["deleted_at"] = now().isoformat(timespec="seconds")
+        save_log(log)
+        print(f"deleted {key} due {rec['due']}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -283,6 +316,9 @@ def main():
     sub.add_parser("buffer-channels")
     b = sub.add_parser("buffer-schedule")
     b.add_argument("--dry-run", action="store_true")
+    u = sub.add_parser("buffer-unschedule")
+    u.add_argument("--channel", action="append", default=[])
+    u.add_argument("--dry-run", action="store_true")
     for name in ("preview", "post"):
         sub.add_parser(name).add_argument("id")
     d = sub.add_parser("due")
@@ -294,6 +330,8 @@ def main():
                 print(f"{c['id']}  {c.get('service')}  {c.get('displayName') or c.get('name')}")
         elif a.cmd == "buffer-schedule":
             cmd_buffer_schedule(a.dry_run)
+        elif a.cmd == "buffer-unschedule":
+            cmd_buffer_unschedule(a.channel, a.dry_run)
         elif a.cmd == "preview":
             print(little_text(find(a.id)["text"]))
         elif a.cmd == "due" and a.dry_run:
