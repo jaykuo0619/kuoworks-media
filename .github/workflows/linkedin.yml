@@ -15,9 +15,13 @@ on:
         options:
           - buffer-schedule
           - buffer-channels
+          - buffer-unschedule
           - linkedin-due
           - linkedin-post
         default: buffer-schedule
+      channel_id:
+        description: "For buffer-unschedule: only this Buffer channel (blank = every channel)"
+        required: false
       post_id:
         description: "For linkedin-post: the post id, e.g. li-01"
         required: false
@@ -50,12 +54,16 @@ jobs:
           LINKEDIN_VERSION: ${{ vars.LINKEDIN_VERSION }}
           TASK: ${{ inputs.task || 'linkedin-due' }}
           POST_ID: ${{ inputs.post_id }}
+          CHANNEL_ID: ${{ inputs.channel_id }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
           dry=""; [ "$DRY_RUN" = "true" ] && dry="--dry-run"
           case "$TASK" in
             buffer-schedule) python3 linkedin/publish.py buffer-schedule $dry ;;
             buffer-channels) python3 linkedin/publish.py buffer-channels ;;
+            buffer-unschedule)
+              ch=""; [ -n "$CHANNEL_ID" ] && ch="--channel $CHANNEL_ID"
+              python3 linkedin/publish.py buffer-unschedule $ch $dry ;;
             linkedin-due)    python3 linkedin/publish.py due $dry ;;
             linkedin-post)
               if [ "$DRY_RUN" = "true" ]; then python3 linkedin/publish.py preview "$POST_ID";
