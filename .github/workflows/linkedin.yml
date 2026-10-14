@@ -23,7 +23,7 @@ on:
         description: "For buffer-unschedule: only this Buffer channel (blank = every channel)"
         required: false
       post_id:
-        description: "For linkedin-post: the post id, e.g. li-01"
+        description: "For linkedin-post and buffer-unschedule: the post id, e.g. li-01"
         required: false
       dry_run:
         description: "Only show what would happen"
@@ -63,7 +63,8 @@ jobs:
             buffer-channels) python3 linkedin/publish.py buffer-channels ;;
             buffer-unschedule)
               ch=""; [ -n "$CHANNEL_ID" ] && ch="--channel $CHANNEL_ID"
-              python3 linkedin/publish.py buffer-unschedule $ch $dry ;;
+              po=""; [ -n "$POST_ID" ] && po="--post $POST_ID"
+              python3 linkedin/publish.py buffer-unschedule $ch $po $dry ;;
             linkedin-due)    python3 linkedin/publish.py due $dry ;;
             linkedin-post)
               if [ "$DRY_RUN" = "true" ]; then python3 linkedin/publish.py preview "$POST_ID";
