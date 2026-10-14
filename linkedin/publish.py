@@ -268,8 +268,12 @@ def cmd_buffer_schedule(dry_run):
                 continue
             post = {"text": p["text"], "channelId": ch, "schedulingType": "automatic",
                     "mode": "customScheduled", "dueAt": due}
-            if p.get("image"):
+            if p.get("video"):
+                post["assets"] = [{"video": {"url": p["video"] if p["video"].startswith("http") else MEDIA_BASE + p["video"]}}]
+            elif p.get("image"):
                 post["assets"] = [{"image": {"url": MEDIA_BASE + p["image"]}}]
+            if p.get("first_comment"):
+                post["metadata"] = {"linkedin": {"firstComment": p["first_comment"]}}
             res = buffer_gql(CREATE_POST, {"input": post})["createPost"]
             if "message" in res and "post" not in res:
                 raise LinkedInError(f"Buffer refused {p['id']} on {ch}: {res['message']}")
