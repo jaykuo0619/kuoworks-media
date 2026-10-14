@@ -6,8 +6,8 @@ Uses only the Python standard library, so it runs as-is on GitHub Actions.
 Route A, through Buffer (posts to the Company Page and the personal profile):
   python3 linkedin/publish.py buffer-channels             list the connected Buffer channels and their ids
   python3 linkedin/publish.py buffer-schedule [--dry-run] queue every future post in Buffer at its time
-  python3 linkedin/publish.py buffer-unschedule [--channel ID ...] [--dry-run]
-                                                          delete the still-queued posts (all channels, or only the given ones)
+  python3 linkedin/publish.py buffer-unschedule [--channel ID ...] [--post ID ...] [--dry-run]
+                                                          delete the still-queued posts (all, or only the given channels / posts)
 
 Route B, straight to the LinkedIn API (personal profile only):
   python3 linkedin/publish.py whoami            check the token, print the author URN
@@ -286,7 +286,7 @@ DELETE_POST = """mutation($input: DeletePostInput!) {
 }"""
 
 
-def cmd_buffer_unschedule(channels, dry_run):
+def cmd_buffer_unschedule(channels, posts, dry_run):
     """Delete queued posts that have not gone out yet. Entries stay in posted.json, marked
     deleted_at, so buffer-schedule does not queue them again; remove an entry to resume it."""
     log, cutoff = load_log(), now() + dt.timedelta(minutes=5)
@@ -294,6 +294,8 @@ def cmd_buffer_unschedule(channels, dry_run):
         if "@buffer:" not in key or rec.get("deleted_at") or not rec.get("buffer_post"):
             continue
         if channels and key.split("@buffer:", 1)[1] not in channels:
+            continue
+        if posts and key.split("@buffer:", 1)[0] not in posts:
             continue
         if dt.datetime.fromisoformat(rec["due"].replace("Z", "+00:00")) <= cutoff:
             print(f"left alone {key}: due {rec['due']} (already published or about to be)")
@@ -318,6 +320,7 @@ def main():
     b.add_argument("--dry-run", action="store_true")
     u = sub.add_parser("buffer-unschedule")
     u.add_argument("--channel", action="append", default=[])
+    u.add_argument("--post", action="append", default=[])
     u.add_argument("--dry-run", action="store_true")
     for name in ("preview", "post"):
         sub.add_parser(name).add_argument("id")
@@ -331,7 +334,7 @@ def main():
         elif a.cmd == "buffer-schedule":
             cmd_buffer_schedule(a.dry_run)
         elif a.cmd == "buffer-unschedule":
-            cmd_buffer_unschedule(a.channel, a.dry_run)
+            cmd_buffer_unschedule(a.channel, a.post, a.dry_run)
         elif a.cmd == "preview":
             print(little_text(find(a.id)["text"]))
         elif a.cmd == "due" and a.dry_run:
