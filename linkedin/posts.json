@@ -43,7 +43,7 @@
   },
   {
     "id": "li-07",
-    "publish_at_utc": "2026-10-27T13:00:00Z",
+    "publish_at_utc": "2026-10-26T13:00:00Z",
     "alt": "Together for 1,024 days. On your home screen, lock screen and Apple Watch.",
     "text": "App no. 2 is for couples. It's called OurDays (小日子).\n\nIt puts the number of days you've been together on your home screen, lock screen and Apple Watch, with a few would-you-rather questions each day that reveal only when both of you answer.\n\n—\n\n第二個作品「小日子」是給兩個人用的 App。在一起的天數放在桌面、鎖定畫面和 Apple Watch 上，每天還有幾題二選一，兩個人都選了才揭曉。\n\nhttps://apps.apple.com/app/id6819721328\n\n#iOSdev #WidgetKit #indiedev",
     "video": "https://jaykuo0619.github.io/kuoworks/video/ourdays-film-en-16x9.mp4"
@@ -61,5 +61,12 @@
     "image": "linkedin/cards/li-09.jpg",
     "alt": "What a one-person studio learns: shipping is half the work, small apps win trust faster, write down what you won't build.",
     "text": "Three apps in, here's what I've learned as a one-person studio:\n\n1. Shipping is half the work. Getting anyone to notice is the other half.\n2. Small apps that do one thing win trust faster than big ones that do everything.\n3. Write down what you will not build, before you start.\n\nNext: bringing these apps to more people in the US. If you're building something small and independent too, I'd like to hear about it.\n\n—\n\n做了三個 App，一人工作室的三個心得：上架只是一半，讓人知道是另一半；只做一件事的小 App 比什麼都做的大 App 更快被信任；開工前先寫下「不做什麼」。\n\n#indiedev #startups #buildinpublic"
+  },
+  {
+    "id": "li-10",
+    "publish_at_utc": "2026-11-03T13:00:00Z",
+    "image": "linkedin/cards/li-10.jpg",
+    "alt": "Designed for two, not one. No sign-up, one pairing code. Answers reveal when both choose. The count lives on your wrist.",
+    "text": "Most apps are designed for one person. OurDays (小日子) is designed for two, and that changed almost every decision.\n\nNo sign-up: one person creates a pairing code, the other types it in.\nWould-you-rather questions stay hidden until both of you answer.\nThe day count lives where you already look: home screen, lock screen, Apple Watch.\n\nBuilding for a pair means every feature has to feel fair to both sides.\n\n—\n\n大部分 App 是設計給一個人用的，小日子是設計給兩個人用的，這改變了幾乎每個決定。不用註冊帳號，一個人建立配對碼、另一個人輸入就連上；二選一要兩個人都選了才揭曉；在一起的天數放在桌面、鎖定畫面和 Apple Watch 上，抬頭就看得到。\n\nhttps://apps.apple.com/app/id6819721328\n\n#iOSdev #productdesign #indiedev"
   }
 ]

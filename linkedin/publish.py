@@ -310,7 +310,10 @@ def cmd_buffer_unschedule(channels, posts, dry_run):
         res = buffer_gql(DELETE_POST, {"input": {"id": rec["buffer_post"]}})["deletePost"]
         if "message" in res:
             raise LinkedInError(f"Buffer would not delete {key}: {res['message']}")
-        rec["deleted_at"] = now().isoformat(timespec="seconds")
+        if posts and channels:
+            del log[key]  # replacing one post on one channel: forget it so buffer-schedule queues the new version
+        else:
+            rec["deleted_at"] = now().isoformat(timespec="seconds")
         save_log(log)
         print(f"deleted {key} due {rec['due']}")
 
